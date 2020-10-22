@@ -1,109 +1,86 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: html_document
-keep_md: true
 
----
-
-
-## Loading and preprocessing the data
-
-Read the data and assign it's content to "activity"
-
-```{r readdata, echo=TRUE}
 
 activity <- read.table(unz("activity.zip", "activity.csv"), header=T, sep=",")
 print("See preview of loaded data")
 head (activity)
 
-```
 
-Process or transform the date field into the format "Year-Month-Day
+##Process or transform the date field into the format "Year-Month-Day
 
-```{r datetransform, echo=TRUE}
 
 activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
 
-```
+
 
 ## What is mean total number of steps taken per day?
 
-Compute total number of steps
+##Compute total number of steps
 
-```{r totalsteps, echo=TRUE}
 
 totalsteps <- sum(activity$steps, na.rm = TRUE)
 
 totalsteps
 
-```
+#Histogram of the number of steps taken each day
 
-Histogram of the number of steps taken each day
 
-```{r histview, echo=TRUE}
 
 hist(activity$steps[activity$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
 
-```
 
-Bar plot of the number of steps taken each day
+#Bar plot of the number of steps taken each day
 
-```{r barview, echo=TRUE}
 
 barplot(activity$steps, main = "Steps Per Day", xlab = "Number of Steps")
-```
 
-Compute the mean of number of steps taken each day
 
-```{r mean, echo=TRUE}
+#Compute the mean of number of steps taken each day
+
+
 
 m1 <- mean(activity$steps, na.rm = TRUE)
 
 m1
 
-```
 
-Compute the median of number of steps taken each day
-```{r median, echo=TRUE}
+#Compute the median of number of steps taken each day
+
 
 m2 <- median(activity$steps, na.rm = TRUE)
 m2
 
-```
 ## What is the average daily activity pattern?
 
-Load relevant libraries and compute daily average steps and plot time series
+#Load relevant libraries and compute daily average steps and plot time series
 
-```{r activitypattern, echo=TRUE}
+
 library(dplyr)
 avgstep <- tapply(activity$steps, activity$interval, mean, na.rm = T)
 plot(avgstep, type = "l" , col = "darkred")
 
 ```
 
-Compute the interval with the maximum number of steps on average
+#Compute the interval with the maximum number of steps on average
 
-```{r maxmeanstep, echo=TRUE}
+
 
 interval <- data.frame(avgstep[avgstep == max(avgstep)])
 interval
 
-```
-The maximum average steps coincides with the 835th 5 minute interval
+
+#The maximum average steps coincides with the 835th 5 minute interval
 
 ## Imputing missing values
 
-Total number of missing values in data set
-
-```{r missingvaluecount, echo=TRUE}
+#Total number of missing values in data set
 
 missingvalue <- activity[is.na(activity) == TRUE]
 length(missingvalue)
-```
 
-Method of of filling in missing values
 
-```{r imputing, echo = TRUE}
+#Method of of filling in missing values
+
+
 fills <-  function(x){ 
                  x$steps[is.na(x$steps)] <- ave(x$steps, x$interval,                                          FUN = function(z) 
                  mean(z, na.rm = TRUE))[c(which(is.na(x$steps)))]
@@ -111,38 +88,34 @@ return(x)
 }
 activity_fld <- fills(activity)
 
-```
 
-Histogram view of the number of steps taken each day over filled data
+#Histogram view of the number of steps taken each day
 
-```{r histview2, echo=TRUE}
+
 
 hist(activity_fld$steps[activity_fld$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
 
-```
 
-Compute the mean of number of steps per day
+#Compute the mean of number of steps per day
 
-```{r mean2, echo=TRUE}
+
 
 m1 <- mean(activity_fld$steps, na.rm = TRUE)
 
 m1
 
-```
 
-Compute the median of number of steps per day
+#Compute the median of number of steps per day
 
-```{r median2, echo=TRUE}
+
 
 m2 <- median(activity_fld$steps, na.rm = TRUE)
 m2
 
-```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r wk_days_end, echo=TRUE}
+
 
 activity_fld$wk_days <- weekdays(as.Date(activity_fld$date))
 
@@ -163,5 +136,4 @@ activity_fld <- summarise(activity_fld, average = mean(steps))
 activity_fld
 xyplot(average ~ interval | wk_grp, data = activity_fld, type = "l", ylab = "Number of Steps", xlab = "Interval")
 
-```
 
