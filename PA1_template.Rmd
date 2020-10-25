@@ -1,17 +1,26 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: html_document
-keep_md: true
-
+title: 'Reproducible Research: Peer Assessment 1'
+output:
+  md_document: default
+  html_document: default
+keep_md: yes
 ---
 
 
 ## Loading and preprocessing the data
 
+Load library
+
+```{r library, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+```
+
 Read the data and assign it's content to "activity"
 
 ```{r readdata, echo=TRUE}
-
 activity <- read.table(unz("activity.zip", "activity.csv"), header=T, sep=",")
 print("See preview of loaded data")
 head (activity)
@@ -28,13 +37,12 @@ activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
 
 ## What is mean total number of steps taken per day?
 
-Compute total number of steps
+Compute total number of steps taken each day
 
 ```{r totalsteps, echo=TRUE}
+totalsteps <- activity %>% group_by(date) %>% summarise(total.steps = sum(steps, na.rm = TRUE))
 
-totalsteps <- sum(activity$steps, na.rm = TRUE)
-
-totalsteps
+head(tibble(totalsteps))
 
 ```
 
@@ -42,51 +50,58 @@ Histogram of the number of steps taken each day
 
 ```{r histview, echo=TRUE}
 
-hist(activity$steps[activity$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
+g <- ggplot(totalsteps, aes(x = date, y = total.steps))
+g <- g + geom_histogram(stat = "identity", colour = " black", fill = "green")
+g <- g + labs(title = "Histogram of the total number of steps taken each day", x = "Date", y = "Total steps")
+print(g)
 
 ```
 
-Bar plot of the number of steps taken each day
-
-```{r barview, echo=TRUE}
-
-barplot(activity$steps, main = "Steps Per Day", xlab = "Number of Steps")
-```
 
 Compute the mean of number of steps taken each day
 
 ```{r mean, echo=TRUE}
 
-m1 <- mean(activity$steps, na.rm = TRUE)
-
-m1
+mean <- mean(totalsteps$total.steps, na.rm = TRUE)
+mean
 
 ```
 
 Compute the median of number of steps taken each day
 ```{r median, echo=TRUE}
 
-m2 <- median(activity$steps, na.rm = TRUE)
-m2
+median <- median(totalsteps$total.steps, na.rm = TRUE)
+median
 
 ```
-## What is the average daily activity pattern?
+## Average daily activity pattern?
 
-Load relevant libraries and compute daily average steps and plot time series
+Compute daily average steps 
 
 ```{r activitypattern, echo=TRUE}
-library(dplyr)
-avgstep <- tapply(activity$steps, activity$interval, mean, na.rm = T)
-plot(avgstep, type = "l" , col = "darkred")
 
+averagesteps <- activity %>% group_by(interval) %>% summarise(avg.steps = mean(steps, na.rm = TRUE))
+
+head(tibble(averagesteps))
+
+```
+Plot time series
+
+```{r timeseries, echo=TRUE}
+
+g <- ggplot(averagesteps, aes(x = interval, y = avg.steps))
+g <- g + geom_line(stat = "identity", col = "blue")
+g <- g + labs(title = "Time series plot of the average number of steps taken", x = "Intrval", y = "Average steps")
+
+print(g)
 ```
 
 Compute the interval with the maximum number of steps on average
 
 ```{r maxmeanstep, echo=TRUE}
 
-interval <- data.frame(avgstep[avgstep == max(avgstep)])
-interval
+intwthmaxsteps <- averagesteps$interval[averagesteps$avg.steps == max(averagesteps$avg.steps)]
+intwthmaxsteps
 
 ```
 The maximum average steps coincides with the 835th 5 minute interval
@@ -110,6 +125,7 @@ fills <-  function(x){
 return(x)
 }
 activity_fld <- fills(activity)
+head(tibble(activity_fld))
 
 ```
 
@@ -117,26 +133,33 @@ Histogram view of the number of steps taken each day over filled data
 
 ```{r histview2, echo=TRUE}
 
-hist(activity_fld$steps[activity_fld$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
+totalsteps2 <- activity_fld %>% group_by(date) %>% summarise(total.steps = sum(steps))
+head(tibble(totalsteps2))
+
+## Plotting total steps
+g <- ggplot(totalsteps2, aes(x = date, y = total.steps))
+g <- g + geom_histogram(stat = "identity", colour = " black", fill = "green")
+g <- g + labs(title = "Histogram of the total number of steps taken each day after missing values are imputed", x = "Date", y = "Total steps")
+print(g)
 
 ```
 
-Compute the mean of number of steps per day
+Compute the new mean of number of steps per day
 
 ```{r mean2, echo=TRUE}
 
-m1 <- mean(activity_fld$steps, na.rm = TRUE)
+mean <- mean(totalsteps2$total.steps)
 
-m1
+mean
 
 ```
 
-Compute the median of number of steps per day
+Compute the new median of number of steps per day
 
 ```{r median2, echo=TRUE}
 
-m2 <- median(activity_fld$steps, na.rm = TRUE)
-m2
+median <- median(totalsteps2$total.steps)
+median
 
 ```
 
@@ -156,12 +179,17 @@ for (i in 1:length(activity_fld$wk_days)){
       }
 }
 
+averagesteps2 <- activity_fld %>% group_by(interval, wk_grp) %>% summarise(avg.steps = mean(steps, na.rm = TRUE))
+
+head(tibble(averagesteps2))
+
 library(lattice)
-activity_fld <- data.frame(activity_fld)
-activity_fld <- group_by(activity_fld, wk_grp, interval)
-activity_fld <- summarise(activity_fld, average = mean(steps))
-activity_fld
-xyplot(average ~ interval | wk_grp, data = activity_fld, type = "l", ylab = "Number of Steps", xlab = "Interval")
+g <- ggplot(averagesteps2, aes(x = interval, y = avg.steps))
+g <- g + geom_line(stat = "identity", col = "blue")
+g <- g + facet_wrap(~ wk_grp, ncol = 1)
+g <- g + labs(title = "Comparing the average number of steps taken per 5-minute interval", x = "Interval", y ="Average steps")
+print(g)
+#xyplot(avg.steps ~ interval | wk_grp, data = averagesteps2, type = "l", ylab = "Number of Steps", xlab = "Interval", layout = c(2,1))
 
 ```
 

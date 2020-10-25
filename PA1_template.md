@@ -1,6 +1,31 @@
 Loading and preprocessing the data
 ----------------------------------
 
+Load library
+
+    library(dplyr)
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+    library(ggplot2)
+    library(lubridate)
+
+    ## 
+    ## Attaching package: 'lubridate'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     date, intersect, setdiff, union
+
 Read the data and assign it’s content to “activity”
 
     activity <- read.table(unz("activity.zip", "activity.csv"), header=T, sep=",")
@@ -25,72 +50,87 @@ Process or transform the date field into the format "Year-Month-Day
 What is mean total number of steps taken per day?
 -------------------------------------------------
 
-Compute total number of steps
+Compute total number of steps taken each day
 
-    totalsteps <- sum(activity$steps, na.rm = TRUE)
+    totalsteps <- activity %>% group_by(date) %>% summarise(total.steps = sum(steps, na.rm = TRUE))
 
-    totalsteps
+    ## `summarise()` ungrouping output (override with `.groups` argument)
 
-    ## [1] 570608
+    head(tibble(totalsteps))
+
+    ## # A tibble: 6 x 2
+    ##   date       total.steps
+    ##   <date>           <int>
+    ## 1 2012-10-01           0
+    ## 2 2012-10-02         126
+    ## 3 2012-10-03       11352
+    ## 4 2012-10-04       12116
+    ## 5 2012-10-05       13294
+    ## 6 2012-10-06       15420
 
 Histogram of the number of steps taken each day
 
-    hist(activity$steps[activity$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
+    g <- ggplot(totalsteps, aes(x = date, y = total.steps))
+    g <- g + geom_histogram(stat = "identity", colour = " black", fill = "green")
+
+    ## Warning: Ignoring unknown parameters: binwidth, bins, pad
+
+    g <- g + labs(title = "Histogram of the total number of steps taken each day", x = "Date", y = "Total steps")
+    print(g)
 
 ![](PA1_template_files/figure-markdown_strict/histview-1.png)
 
-Bar plot of the number of steps taken each day
-
-    barplot(activity$steps, main = "Steps Per Day", xlab = "Number of Steps")
-
-![](PA1_template_files/figure-markdown_strict/barview-1.png)
-
 Compute the mean of number of steps taken each day
 
-    m1 <- mean(activity$steps, na.rm = TRUE)
+    mean <- mean(totalsteps$total.steps, na.rm = TRUE)
+    mean
 
-    m1
-
-    ## [1] 37.3826
+    ## [1] 9354.23
 
 Compute the median of number of steps taken each day
 
-    m2 <- median(activity$steps, na.rm = TRUE)
-    m2
+    median <- median(totalsteps$total.steps, na.rm = TRUE)
+    median
 
-    ## [1] 0
+    ## [1] 10395
 
-What is the average daily activity pattern?
--------------------------------------------
+Average daily activity pattern?
+-------------------------------
 
-Load relevant libraries and compute daily average steps and plot time
-series
+Compute daily average steps
 
-    library(dplyr)
+    averagesteps <- activity %>% group_by(interval) %>% summarise(avg.steps = mean(steps, na.rm = TRUE))
 
-    ## 
-    ## Attaching package: 'dplyr'
+    ## `summarise()` ungrouping output (override with `.groups` argument)
 
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
+    head(tibble(averagesteps))
 
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
+    ## # A tibble: 6 x 2
+    ##   interval avg.steps
+    ##      <int>     <dbl>
+    ## 1        0    1.72  
+    ## 2        5    0.340 
+    ## 3       10    0.132 
+    ## 4       15    0.151 
+    ## 5       20    0.0755
+    ## 6       25    2.09
 
-    avgstep <- tapply(activity$steps, activity$interval, mean, na.rm = T)
-    plot(avgstep, type = "l" , col = "darkred")
+Plot time series
 
-![](PA1_template_files/figure-markdown_strict/activitypattern-1.png)
+    g <- ggplot(averagesteps, aes(x = interval, y = avg.steps))
+    g <- g + geom_line(stat = "identity", col = "blue")
+    g <- g + labs(title = "Time series plot of the average number of steps taken", x = "Intrval", y = "Average steps")
+
+    print(g)
+
+![](PA1_template_files/figure-markdown_strict/timeseries-1.png)
 
 Compute the interval with the maximum number of steps on average
 
-    interval <- data.frame(avgstep[avgstep == max(avgstep)])
-    interval
+    intwthmaxsteps <- averagesteps$interval[averagesteps$avg.steps == max(averagesteps$avg.steps)]
+    intwthmaxsteps
 
-    ##     avgstep.avgstep....max.avgstep..
-    ## 835                         206.1698
+    ## [1] 835
 
 The maximum average steps coincides with the 835th 5 minute interval
 
@@ -112,27 +152,61 @@ Method of of filling in missing values
     return(x)
     }
     activity_fld <- fills(activity)
+    head(tibble(activity_fld))
+
+    ## # A tibble: 6 x 3
+    ##    steps date       interval
+    ##    <dbl> <date>        <int>
+    ## 1 1.72   2012-10-01        0
+    ## 2 0.340  2012-10-01        5
+    ## 3 0.132  2012-10-01       10
+    ## 4 0.151  2012-10-01       15
+    ## 5 0.0755 2012-10-01       20
+    ## 6 2.09   2012-10-01       25
 
 Histogram view of the number of steps taken each day over filled data
 
-    hist(activity_fld$steps[activity_fld$steps > 0], main = " Steps Per Day ", xlab = "Number of Steps", col = "green", breaks = 100)
+    totalsteps2 <- activity_fld %>% group_by(date) %>% summarise(total.steps = sum(steps))
+
+    ## `summarise()` ungrouping output (override with `.groups` argument)
+
+    head(tibble(totalsteps2))
+
+    ## # A tibble: 6 x 2
+    ##   date       total.steps
+    ##   <date>           <dbl>
+    ## 1 2012-10-01      10766.
+    ## 2 2012-10-02        126 
+    ## 3 2012-10-03      11352 
+    ## 4 2012-10-04      12116 
+    ## 5 2012-10-05      13294 
+    ## 6 2012-10-06      15420
+
+    ## Plotting total steps
+    g <- ggplot(totalsteps2, aes(x = date, y = total.steps))
+    g <- g + geom_histogram(stat = "identity", colour = " black", fill = "green")
+
+    ## Warning: Ignoring unknown parameters: binwidth, bins, pad
+
+    g <- g + labs(title = "Histogram of the total number of steps taken each day after missing values are imputed", x = "Date", y = "Total steps")
+    print(g)
 
 ![](PA1_template_files/figure-markdown_strict/histview2-1.png)
 
-Compute the mean of number of steps per day
+Compute the new mean of number of steps per day
 
-    m1 <- mean(activity_fld$steps, na.rm = TRUE)
+    mean <- mean(totalsteps2$total.steps)
 
-    m1
+    mean
 
-    ## [1] 37.3826
+    ## [1] 10766.19
 
-Compute the median of number of steps per day
+Compute the new median of number of steps per day
 
-    m2 <- median(activity_fld$steps, na.rm = TRUE)
-    m2
+    median <- median(totalsteps2$total.steps)
+    median
 
-    ## [1] 0
+    ## [1] 10766.19
 
 Are there differences in activity patterns between weekdays and weekends?
 -------------------------------------------------------------------------
@@ -149,31 +223,29 @@ Are there differences in activity patterns between weekdays and weekends?
           }
     }
 
+    averagesteps2 <- activity_fld %>% group_by(interval, wk_grp) %>% summarise(avg.steps = mean(steps, na.rm = TRUE))
+
+    ## `summarise()` regrouping output by 'interval' (override with `.groups` argument)
+
+    head(tibble(averagesteps2))
+
+    ## # A tibble: 6 x 3
+    ##   interval wk_grp  avg.steps
+    ##      <int> <chr>       <dbl>
+    ## 1        0 Weekday    2.25  
+    ## 2        0 Weekend    0.215 
+    ## 3        5 Weekday    0.445 
+    ## 4        5 Weekend    0.0425
+    ## 5       10 Weekday    0.173 
+    ## 6       10 Weekend    0.0165
+
     library(lattice)
-    activity_fld <- data.frame(activity_fld)
-    activity_fld <- group_by(activity_fld, wk_grp, interval)
-    activity_fld <- summarise(activity_fld, average = mean(steps))
-
-    ## `summarise()` regrouping output by 'wk_grp' (override with `.groups` argument)
-
-    activity_fld
-
-    ## # A tibble: 576 x 3
-    ## # Groups:   wk_grp [2]
-    ##    wk_grp  interval average
-    ##    <chr>      <int>   <dbl>
-    ##  1 Weekday        0  2.25  
-    ##  2 Weekday        5  0.445 
-    ##  3 Weekday       10  0.173 
-    ##  4 Weekday       15  0.198 
-    ##  5 Weekday       20  0.0990
-    ##  6 Weekday       25  1.59  
-    ##  7 Weekday       30  0.693 
-    ##  8 Weekday       35  1.14  
-    ##  9 Weekday       40  0     
-    ## 10 Weekday       45  1.80  
-    ## # ... with 566 more rows
-
-    xyplot(average ~ interval | wk_grp, data = activity_fld, type = "l", ylab = "Number of Steps", xlab = "Interval")
+    g <- ggplot(averagesteps2, aes(x = interval, y = avg.steps))
+    g <- g + geom_line(stat = "identity", col = "blue")
+    g <- g + facet_wrap(~ wk_grp, ncol = 1)
+    g <- g + labs(title = "Comparing the average number of steps taken per 5-minute interval", x = "Interval", y ="Average steps")
+    print(g)
 
 ![](PA1_template_files/figure-markdown_strict/wk_days_end-1.png)
+
+    #xyplot(avg.steps ~ interval | wk_grp, data = averagesteps2, type = "l", ylab = "Number of Steps", xlab = "Interval", layout = c(2,1))
