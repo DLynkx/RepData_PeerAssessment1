@@ -116,11 +116,13 @@ missingvalue <- activity[is.na(activity) == TRUE]
 length(missingvalue)
 ```
 
-Method of of filling in missing values
+## Method of of filling in missing values
+
+The method used is to group all data according to their 5-minute intervals. The means of the 5-minute intervals are computed without NAs. The respective mean values are assigned to all locations where NA is true.
 
 ```{r imputing, echo = TRUE}
 fills <-  function(x){ 
-                 x$steps[is.na(x$steps)] <- ave(x$steps, x$interval,                                          FUN = function(z) 
+                 x$steps[is.na(x$steps)] <- ave(x$steps, x$interval, FUN = function(z) 
                  mean(z, na.rm = TRUE))[c(which(is.na(x$steps)))]
 return(x)
 }
@@ -163,7 +165,11 @@ median
 
 ```
 
+The new mean and median are different from the original ones computed by removing NAs.
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+The activity patterns between the weekday and weekends are different. See figure below:
 
 ```{r wk_days_end, echo=TRUE}
 
@@ -189,7 +195,6 @@ g <- g + geom_line(stat = "identity", col = "blue")
 g <- g + facet_wrap(~ wk_grp, ncol = 1)
 g <- g + labs(title = "Comparing the average number of steps taken per 5-minute interval", x = "Interval", y ="Average steps")
 print(g)
-#xyplot(avg.steps ~ interval | wk_grp, data = averagesteps2, type = "l", ylab = "Number of Steps", xlab = "Interval", layout = c(2,1))
 
 ```
 

@@ -145,9 +145,15 @@ Total number of missing values in data set
     ## [1] 2304
 
 Method of of filling in missing values
+--------------------------------------
+
+The method used is to group all data according to their 5-minute
+intervals. The means of the 5-minute intervals are computed without NAs.
+The respective mean values are assigned to all locations where NA is
+true.
 
     fills <-  function(x){ 
-                     x$steps[is.na(x$steps)] <- ave(x$steps, x$interval,                                          FUN = function(z) 
+                     x$steps[is.na(x$steps)] <- ave(x$steps, x$interval, FUN = function(z) 
                      mean(z, na.rm = TRUE))[c(which(is.na(x$steps)))]
     return(x)
     }
@@ -208,8 +214,14 @@ Compute the new median of number of steps per day
 
     ## [1] 10766.19
 
+The new mean and median are different from the original ones computed by
+removing NAs.
+
 Are there differences in activity patterns between weekdays and weekends?
 -------------------------------------------------------------------------
+
+The activity patterns between the weekday and weekends are different.
+See figure below:
 
     activity_fld$wk_days <- weekdays(as.Date(activity_fld$date))
 
@@ -247,5 +259,3 @@ Are there differences in activity patterns between weekdays and weekends?
     print(g)
 
 ![](PA1_template_files/figure-markdown_strict/wk_days_end-1.png)
-
-    #xyplot(avg.steps ~ interval | wk_grp, data = averagesteps2, type = "l", ylab = "Number of Steps", xlab = "Interval", layout = c(2,1))
